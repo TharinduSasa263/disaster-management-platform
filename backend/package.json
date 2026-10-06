@@ -7,7 +7,8 @@
     "start": "nodemon index.js",
     "dev": "nodemon index.js",
     "prod": "node index.js",
-    "seed:officer": "node seedOfficer.js"
+    "seed:officer": "node seedOfficer.js",
+    "seed:sensors": "node seedSensors.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +16,7 @@
   "type": "module",
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.5",
     "express": "^5.2.1",
@@ -22,7 +24,9 @@
     "joi": "^18.2.9",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.11.0",
-    "morgan": "^1.12.1"
+    "morgan": "^1.12.1",
+    "multer": "^2.4.0",
+    "multer-storage-cloudinary": "^4.0.0"
   },
   "devDependencies": {
     "jest": "^30.5.2",
