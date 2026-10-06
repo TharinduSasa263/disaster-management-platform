@@ -21,7 +21,7 @@ class HazardWarningRepository {
                 $set: { status: newStatus },
                 $inc: { version: 1 }
             },
-            { new: true }
+            { returnDocument: 'after' }
         );
     }
 
@@ -45,11 +45,21 @@ class HazardWarningRepository {
     }
 
     // Update a specific channel delivery log
-    async updateDeliveryLog(logId, updateData) {
+    async updateDeliveryLog(logId, setFields = {}, incFields = {}) {
+        const updateQuery = {};
+
+        if (Object.keys(setFields).length > 0) {
+            updateQuery.$set = setFields;
+        }
+
+        if (Object.keys(incFields).length > 0) {
+            updateQuery.$inc = incFields;
+        }
+
         return await DeliveryLog.findByIdAndUpdate(
             logId,
-            { $set: updateData },
-            { new: true }
+            updateQuery,
+            { returnDocument: 'after' }
         );
     }
 }

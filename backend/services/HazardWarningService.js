@@ -128,12 +128,15 @@ class HazardWarningService {
             const strategy = strategies.find((s) => s.getChannelName() === log.channel);
             if (strategy && log.failed > 0) {
                 const retryResult = await strategy.send(warning, log.failed);
-                await hazardWarningRepository.updateDeliveryLog(log._id, {
-                    successful: log.successful + retryResult.successful,
-                    failed: retryResult.failed,
-                    status: retryResult.failed > 0 ? 'PARTIAL_FAILURE' : 'COMPLETED',
-                    $inc: { retryCount: 1 },
-                });
+                await hazardWarningRepository.updateDeliveryLog(
+                    log._id,
+                    {
+                        successful: log.successful + retryResult.successful,
+                        failed: retryResult.failed,
+                        status: retryResult.failed > 0 ? 'PARTIAL_FAILURE' : 'COMPLETED',
+                    },
+                    { retryCount: 1 } // Pass $inc fields separately to avoid Mongoose operator conflicts
+                );
             }
         }
 

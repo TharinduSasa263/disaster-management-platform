@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import warningCreationRoutes from './routes/warningCreationRoutes.js';
+import warningDisseminationRoutes from './routes/warningDisseminationRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,6 +27,17 @@ app.use('/api/v1/reports', reportRoutes);
 // Base Health-check Route
 app.get('/', (req, res) => {
   res.send('Disaster Early Warning System API is running...');
+});
+
+//ashen =====================
+
+// Mount Module 2 Routes
+app.use('/api/warnings', warningCreationRoutes);
+app.use('/api/warnings', warningDisseminationRoutes);
+
+// Health Check Endpoint
+app.get('/', (req, res) => {
+  res.send('Disaster Management Module 2 API is running...');
 });
 
 const PORT = process.env.PORT || 5000;
