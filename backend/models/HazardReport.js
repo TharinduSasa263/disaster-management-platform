@@ -44,7 +44,7 @@ const hazardReportSchema = new mongoose.Schema(
         ],
         status: {
             type: String,
-            enum: ['PENDING', 'CLUSTERED', 'REJECTED'],
+            enum: ['PENDING', 'CLUSTERED', 'REJECTED', 'FLAGGED', 'DUPLICATE_MERGED'],
             default: 'PENDING',
         },
     },

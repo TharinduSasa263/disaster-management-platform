@@ -48,7 +48,7 @@ const reportClusterSchema = new mongoose.Schema(
         ],
         status: {
             type: String,
-            enum: ['PENDING_VERIFICATION', 'IN_REVIEW', 'VERIFIED', 'REJECTED'],
+            enum: ['PENDING_VERIFICATION', 'IN_REVIEW', 'VERIFIED', 'REJECTED', 'FLAGGED', 'DUPLICATE_MERGED'],
             default: 'PENDING_VERIFICATION',
         },
         lockedBy: {

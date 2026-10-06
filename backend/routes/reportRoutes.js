@@ -8,6 +8,7 @@ import {
 import { upload } from '../config/cloudinary.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 import jwt from 'jsonwebtoken';
+import { getActiveHazards, getNearbyHazards } from '../controllers/mapController.js';
 
 const router = express.Router();
 
@@ -49,5 +50,9 @@ router.post(
     authorizeRoles('DMC_OFFICER', 'ADMIN'),
     verifyCluster
 );
+
+// Public GeoJSON Map Endpoints
+router.get('/active-hazards', getActiveHazards);
+router.get('/nearby', getNearbyHazards);
 
 export default router;
