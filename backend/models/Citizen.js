@@ -7,6 +7,17 @@ const citizenSchema = new mongoose.Schema(
       required: [true, 'Full name is required'],
       trim: true,
     },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        'Please enter a valid email address',
+      ],
+    },
     nic: {
       type: String,
       required: [true, 'NIC number is required'],
@@ -47,6 +58,7 @@ const citizenSchema = new mongoose.Schema(
     },
     role: {
       type: String,
+      enum: ['CITIZEN', 'DMC_OFFICER', 'BROADCAST_OFFICER'],
       default: 'CITIZEN',
     },
   },
