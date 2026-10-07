@@ -24,7 +24,7 @@ const HAZARD_TYPES = [
     { id: 'TSUNAMI', label: 'TSUNAMI', icon: '🌊', color: '#DC2626' },
 ];
 
-export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitchToDetailed, onOpenLiveMap }) {
+export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitchToDetailed, onOpenLiveMap, onOpenMyReports, }) {
     const [selectedHazard, setSelectedHazard] = useState('FLOOD');
     const [description, setDescription] = useState('');
     const [imageUri, setImageUri] = useState(null);
@@ -99,22 +99,22 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
 
         setSubmitting(true);
 
-        const payload = {
-            hazardType: selectedHazard,
-            description: description || `Express report for ${selectedHazard}`,
-            latitude: location.latitude,
-            longitude: location.longitude,
-            photoUrl: imageUri || null,
-            isGuestReport: userSession?.isGuest ?? true,
-            token: userSession?.token || null,
-            isDetailed: false,
-        };
-
         const netStatus = await NetInfo.fetch();
 
-        // Offline fallback path
+        // Offline fallback path: Store JSON payload locally for later sync
         if (!netStatus.isConnected) {
-            await saveReportOffline(payload);
+            const offlinePayload = {
+                hazardType: selectedHazard,
+                description: description || `Express report for ${selectedHazard}`,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                photoUrl: imageUri || null,
+                isGuestReport: userSession?.isGuest ?? true,
+                token: userSession?.token || null,
+                isDetailed: false,
+            };
+
+            await saveReportOffline(offlinePayload);
             setSubmitting(false);
             Alert.alert(
                 'Offline Mode Active',
@@ -125,9 +125,30 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
             return;
         }
 
-        // Online dispatch path
+        // Online dispatch path using FormData for Multer & Cloudinary compatibility
         try {
-            const headers = { 'Content-Type': 'application/json' };
+            const formData = new FormData();
+            formData.append('hazardType', selectedHazard);
+            formData.append('description', description || `Express report for ${selectedHazard}`);
+            formData.append('latitude', location.latitude.toString());
+            formData.append('longitude', location.longitude.toString());
+            formData.append('isGuestReport', userSession?.isGuest ? 'true' : 'false');
+            formData.append('isDetailed', 'false');
+
+            // Append captured photo if available
+            if (imageUri) {
+                const filename = imageUri.split('/').pop() || 'photo.jpg';
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+                formData.append('photos', {
+                    uri: imageUri,
+                    name: filename,
+                    type,
+                });
+            }
+
+            const headers = {};
             if (userSession?.token) {
                 headers['Authorization'] = `Bearer ${userSession.token}`;
             }
@@ -135,23 +156,42 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
             const response = await fetch(`${BASE_URL}/reports/submit`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify(payload),
+                body: formData,
             });
 
             const result = await response.json();
 
             if (response.ok || result.success) {
-                Alert.alert('Report Dispatched!', 'Your emergency report was submitted to DMC controllers.', [
+                Alert.alert('Report Dispatched!', 'Your emergency report was submitted with photo attachment.', [
                     { text: 'OK', onPress: onBackToAuth },
                 ]);
             } else {
-                // Fallback to queue if server errors
-                await saveReportOffline(payload);
-                Alert.alert('Queued Offline', 'Server unavailable. Saved to local sync queue.');
+                // Queue offline if backend responds with error
+                const offlinePayload = {
+                    hazardType: selectedHazard,
+                    description: description || `Express report for ${selectedHazard}`,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    photoUrl: imageUri || null,
+                    isGuestReport: userSession?.isGuest ?? true,
+                    token: userSession?.token || null,
+                    isDetailed: false,
+                };
+                await saveReportOffline(offlinePayload);
+                Alert.alert('Queued Offline', 'Server returned error. Saved to local sync queue.');
             }
         } catch (error) {
-            // Fallback to queue on network failure
-            await saveReportOffline(payload);
+            const offlinePayload = {
+                hazardType: selectedHazard,
+                description: description || `Express report for ${selectedHazard}`,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                photoUrl: imageUri || null,
+                isGuestReport: userSession?.isGuest ?? true,
+                token: userSession?.token || null,
+                isDetailed: false,
+            };
+            await saveReportOffline(offlinePayload);
             Alert.alert('Saved to Offline Queue', 'Could not reach server. Report queued for auto-sync.');
         } finally {
             setSubmitting(false);
@@ -173,9 +213,20 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
                             <Text style={styles.userBadge}>Switch to Detailed Assessment →</Text>
                         </TouchableOpacity>
                     </View>
-                    <TouchableOpacity onPress={onOpenLiveMap} style={{ padding: 6, backgroundColor: '#E0F2FE', borderRadius: 8 }}>
-                        <Text style={{ fontSize: 12, fontWeight: '800', color: '#0284C7' }}>🗺️ Map</Text>
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                        <TouchableOpacity
+                            onPress={onOpenMyReports}
+                            style={{ paddingHorizontal: 8, paddingVertical: 6, backgroundColor: '#FEF3C7', borderRadius: 8 }}
+                        >
+                            <Text style={{ fontSize: 12, fontWeight: '800', color: '#B45309' }}>📋 History</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={onOpenLiveMap}
+                            style={{ paddingHorizontal: 8, paddingVertical: 6, backgroundColor: '#E0F2FE', borderRadius: 8 }}
+                        >
+                            <Text style={{ fontSize: 12, fontWeight: '800', color: '#0284C7' }}>🗺️ Map</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Offline Sync Banner */}
