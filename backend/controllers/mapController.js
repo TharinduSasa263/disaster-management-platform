@@ -1,4 +1,5 @@
 import ReportCluster from '../models/ReportCluster.js';
+import HazardReport from '../models/HazardReport.js';
 
 /**
  * @desc    Get all active VERIFIED hazard clusters formatted as GeoJSON
@@ -89,6 +90,43 @@ export const getNearbyHazards = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: `Nearby hazard lookup failed: ${error.message}`,
+        });
+    }
+};
+
+/**
+ * @desc    Get active reports list for mobile live feed / map
+ * @route   GET /api/v1/reports/active
+ * @access  Public
+ */
+export const getActiveReports = async (req, res) => {
+    try {
+        const reports = await HazardReport.find({ status: { $ne: 'REJECTED' } })
+            .sort({ createdAt: -1 })
+            .limit(100)
+            .lean();
+
+        const data = reports.map((r) => ({
+            _id: r._id,
+            hazardType: r.hazardType,
+            description: r.description,
+            district: r.district,
+            latitude: r.location?.coordinates ? r.location.coordinates[1] : 0,
+            longitude: r.location?.coordinates ? r.location.coordinates[0] : 0,
+            status: r.status,
+            photoUrls: r.photoUrls,
+            createdAt: r.createdAt,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            count: data.length,
+            data,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: `Failed to fetch active reports: ${error.message}`,
         });
     }
 };

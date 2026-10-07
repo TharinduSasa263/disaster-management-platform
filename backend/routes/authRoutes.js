@@ -7,6 +7,8 @@ const router = express.Router();
 // Public Auth Endpoints
 router.post('/citizen/register', registerCitizen);
 router.post('/citizen/login', loginCitizen);
+router.post('/register', registerCitizen);
+router.post('/login', loginCitizen);
 
 // Protected Auth Verification Endpoint
 router.get('/citizen/me', protect, authorizeRoles('CITIZEN'), getMe);

@@ -8,7 +8,8 @@ import {
 import { upload } from '../config/cloudinary.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 import jwt from 'jsonwebtoken';
-import { getActiveHazards, getNearbyHazards } from '../controllers/mapController.js';
+import { getActiveHazards, getNearbyHazards, getActiveReports } from '../controllers/mapController.js';
+import { getMyReports } from '../controllers/reportController.js';
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ const optionalAuth = (req, res, next) => {
 
 // Ground Hazard Submission Route (Works for both Logged-In Citizens & Guests)
 router.post('/submit', optionalAuth, upload.array('photos', 5), submitReport);
+router.post('/submit-detailed', optionalAuth, upload.array('photos', 5), submitReport);
 
 // DMC Officer Verification Queue Routes
 router.get(
@@ -51,8 +53,10 @@ router.post(
     verifyCluster
 );
 
-// Public GeoJSON Map Endpoints
+// Public GeoJSON Map & Feed Endpoints
+router.get('/active', getActiveReports);
 router.get('/active-hazards', getActiveHazards);
 router.get('/nearby', getNearbyHazards);
+router.get('/my-reports', protect, getMyReports);
 
 export default router;

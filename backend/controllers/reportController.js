@@ -14,7 +14,7 @@ export const submitReport = async (req, res) => {
 
         const hazardType = payload.hazardType;
         const description = payload.description;
-        const district = payload.district;
+        const district = payload.district || req.body?.district || 'Colombo';
         const isGuestReport = payload.isGuestReport ?? req.body?.isGuestReport;
 
         let rawLat = payload.latitude ?? payload.lat ?? req.body?.latitude ?? req.body?.lat;
@@ -29,7 +29,7 @@ export const submitReport = async (req, res) => {
             if (typeof loc === 'string') {
                 try {
                     loc = JSON.parse(loc);
-                } catch (e) {}
+                } catch (e) { }
             }
             coords = loc?.coordinates;
         }
@@ -121,5 +121,46 @@ export const submitReport = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// @desc    Get all reports submitted by the logged-in citizen
+// @route   GET /api/v1/reports/my-reports
+// @access  Protected
+export const getMyReports = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({
+                success: false,
+                message: 'Unauthorized. Please log in to view your reports.',
+            });
+        }
+
+        const reports = await HazardReport.find({ reporter: req.user.id })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        const data = reports.map((r) => ({
+            _id: r._id,
+            hazardType: r.hazardType,
+            description: r.description,
+            district: r.district,
+            latitude: r.location?.coordinates ? r.location.coordinates[1] : 0,
+            longitude: r.location?.coordinates ? r.location.coordinates[0] : 0,
+            status: r.status || 'PENDING',
+            photoUrls: r.photoUrls || [],
+            createdAt: r.createdAt,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            count: data.length,
+            data,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: `Failed to fetch your reports: ${error.message}`,
+        });
     }
 };
