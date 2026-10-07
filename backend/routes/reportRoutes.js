@@ -9,6 +9,7 @@ import { upload } from '../config/cloudinary.js';
 import { protect, authorizeRoles } from '../middleware/authMiddleware.js';
 import jwt from 'jsonwebtoken';
 import { getActiveHazards, getNearbyHazards, getActiveReports } from '../controllers/mapController.js';
+import { getMyReports } from '../controllers/reportController.js';
 
 const router = express.Router();
 
@@ -56,5 +57,6 @@ router.post(
 router.get('/active', getActiveReports);
 router.get('/active-hazards', getActiveHazards);
 router.get('/nearby', getNearbyHazards);
+router.get('/my-reports', protect, getMyReports);
 
 export default router;
