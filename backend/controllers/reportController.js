@@ -14,7 +14,7 @@ export const submitReport = async (req, res) => {
 
         const hazardType = payload.hazardType;
         const description = payload.description;
-        const district = payload.district;
+        const district = payload.district || req.body?.district || 'Colombo';
         const isGuestReport = payload.isGuestReport ?? req.body?.isGuestReport;
 
         let rawLat = payload.latitude ?? payload.lat ?? req.body?.latitude ?? req.body?.lat;
