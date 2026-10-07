@@ -38,7 +38,7 @@ class VerificationErrorBoundary extends React.Component {
     }
 }
 
-export default function VerificationQueue({ officerToken }) {
+export default function VerificationQueue({ officerToken, onHandoverVerifiedCluster }) {
     const [clusters, setClusters] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedCluster, setSelectedCluster] = useState(null);
@@ -143,6 +143,12 @@ export default function VerificationQueue({ officerToken }) {
             if (data.success) {
                 alert(data.message || `Cluster action ${actionType} completed.`);
                 setSelectedCluster(null);
+                
+                // Handover to Module 2 Warning Creation Wizard if VERIFY action
+                if (actionType === 'VERIFY' && onHandoverVerifiedCluster && data.handoverPayload) {
+                    onHandoverVerifiedCluster(data.handoverPayload);
+                }
+                
                 fetchPendingClusters();
             } else {
                 alert(data.message || 'Failed to process verification action.');

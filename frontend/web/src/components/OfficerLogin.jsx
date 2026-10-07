@@ -15,11 +15,19 @@ export default function OfficerLogin({ onLoginSuccess }) {
         setLoading(true);
 
         try {
-            const res = await fetch(`${AUTH_URL}/login`, {
+            let res = await fetch(`${AUTH_URL}/citizen/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identifier, password }),
+                body: JSON.stringify({ identifier, email: identifier, password }),
             });
+
+            if (res.status === 404) {
+                res = await fetch(`${AUTH_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier, email: identifier, password }),
+                });
+            }
 
             const data = await res.json();
 
