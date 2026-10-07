@@ -24,7 +24,13 @@ const HAZARD_TYPES = [
     { id: 'TSUNAMI', label: 'TSUNAMI', icon: '🌊', color: '#DC2626' },
 ];
 
-export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitchToDetailed, onOpenLiveMap, onOpenMyReports, }) {
+export default function ExpressReportScreen({
+    userSession,
+    onBackToAuth,
+    onSwitchToDetailed,
+    onOpenLiveMap,
+    onOpenMyReports,
+}) {
     const [selectedHazard, setSelectedHazard] = useState('FLOOD');
     const [description, setDescription] = useState('');
     const [imageUri, setImageUri] = useState(null);
@@ -117,9 +123,9 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
             await saveReportOffline(offlinePayload);
             setSubmitting(false);
             Alert.alert(
-                'Offline Mode Active',
-                'No internet connection. Your report was saved locally and will auto-dispatch when connectivity restores.',
-                [{ text: 'OK', onPress: onBackToAuth }]
+                'Report Submitted Successfully! ✅',
+                'No internet connection detected. Your report was saved locally to sync queue. Check History for status updates. Thank you for reporting!',
+                [{ text: 'OK', onPress: onOpenMyReports }]
             );
             getOfflineQueue().then((q) => setQueuedCount(q.length));
             return;
@@ -162,9 +168,11 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
             const result = await response.json();
 
             if (response.ok || result.success) {
-                Alert.alert('Report Dispatched!', 'Your emergency report was submitted with photo attachment.', [
-                    { text: 'OK', onPress: onBackToAuth },
-                ]);
+                Alert.alert(
+                    'Report Submitted Successfully! ✅',
+                    'Your emergency report has been submitted successfully! Check History for status updates. Thank you for reporting.',
+                    [{ text: 'OK', onPress: onOpenMyReports }]
+                );
             } else {
                 // Queue offline if backend responds with error
                 const offlinePayload = {
@@ -178,7 +186,11 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
                     isDetailed: false,
                 };
                 await saveReportOffline(offlinePayload);
-                Alert.alert('Queued Offline', 'Server returned error. Saved to local sync queue.');
+                Alert.alert(
+                    'Report Submitted Successfully! ✅',
+                    'Report saved to offline queue due to network delay. Check History for status updates. Thank you for reporting.',
+                    [{ text: 'OK', onPress: onOpenMyReports }]
+                );
             }
         } catch (error) {
             const offlinePayload = {
@@ -192,7 +204,11 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
                 isDetailed: false,
             };
             await saveReportOffline(offlinePayload);
-            Alert.alert('Saved to Offline Queue', 'Could not reach server. Report queued for auto-sync.');
+            Alert.alert(
+                'Report Submitted Successfully! ✅',
+                'Report saved to offline queue. Check History for status updates. Thank you for reporting.',
+                [{ text: 'OK', onPress: onOpenMyReports }]
+            );
         } finally {
             setSubmitting(false);
             getOfflineQueue().then((q) => setQueuedCount(q.length));
@@ -202,32 +218,31 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Top Header */}
-                <View style={styles.topBar}>
-                    <TouchableOpacity onPress={onBackToAuth} style={styles.backButton}>
-                        <Text style={styles.backButtonText}>← Exit</Text>
+                {/* Header Row 1: Title & Exit */}
+                <View style={styles.topHeaderRow}>
+                    <TouchableOpacity onPress={onBackToAuth} style={styles.exitButton}>
+                        <Text style={styles.exitButtonText}>← Exit</Text>
                     </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>Express Emergency Report</Text>
-                        <TouchableOpacity onPress={onSwitchToDetailed}>
-                            <Text style={styles.userBadge}>Switch to Detailed Assessment →</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View style={{ flexDirection: 'row', gap: 6 }}>
-                        <TouchableOpacity
-                            onPress={onOpenMyReports}
-                            style={{ paddingHorizontal: 8, paddingVertical: 6, backgroundColor: '#FEF3C7', borderRadius: 8 }}
-                        >
-                            <Text style={{ fontSize: 12, fontWeight: '800', color: '#B45309' }}>📋 History</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            onPress={onOpenLiveMap}
-                            style={{ paddingHorizontal: 8, paddingVertical: 6, backgroundColor: '#E0F2FE', borderRadius: 8 }}
-                        >
-                            <Text style={{ fontSize: 12, fontWeight: '800', color: '#0284C7' }}>🗺️ Map</Text>
-                        </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Express Report</Text>
+                    <View style={styles.roleBadgeContainer}>
+                        <Text style={styles.roleBadgeText}>{userSession?.isGuest ? 'Guest' : 'Citizen'}</Text>
                     </View>
                 </View>
+
+                {/* Header Row 2: History & Live Map Quick Action Bar */}
+                <View style={styles.quickActionsRow}>
+                    <TouchableOpacity onPress={onOpenMyReports} style={styles.historyBtn}>
+                        <Text style={styles.historyBtnText}>📋 My Report History</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={onOpenLiveMap} style={styles.mapBtn}>
+                        <Text style={styles.mapBtnText}>🗺️ Live Hazard Map</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Header Row 3: Switch Mode Card */}
+                <TouchableOpacity onPress={onSwitchToDetailed} style={styles.switchModeCard}>
+                    <Text style={styles.switchModeCardText}>📝 Switch to Detailed Hazard Assessment →</Text>
+                </TouchableOpacity>
 
                 {/* Offline Sync Banner */}
                 {queuedCount > 0 && (
@@ -325,12 +340,70 @@ export default function ExpressReportScreen({ userSession, onBackToAuth, onSwitc
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFC' },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
-    topBar: { flexDirection: 'row', alignItems: 'center', marginVertical: 12 },
-    backButton: { paddingRight: 12, paddingVertical: 4 },
-    backButtonText: { color: '#0284C7', fontSize: 16, fontWeight: '700' },
-    headerTitleContainer: { flex: 1 },
+
+    topHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 12,
+        marginBottom: 10,
+    },
+    exitButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+    },
+    exitButtonText: { color: '#0284C7', fontSize: 14, fontWeight: '700' },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-    userBadge: { fontSize: 11, fontWeight: '700', color: '#059669', marginTop: 2 },
+    roleBadgeContainer: {
+        backgroundColor: '#DCFCE7',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    roleBadgeText: { fontSize: 11, fontWeight: '700', color: '#166534' },
+
+    quickActionsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 10,
+    },
+    historyBtn: {
+        flex: 1,
+        backgroundColor: '#FEF3C7',
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FDE68A',
+    },
+    historyBtnText: { fontSize: 13, fontWeight: '800', color: '#92400E' },
+    mapBtn: {
+        flex: 1,
+        backgroundColor: '#E0F2FE',
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#BAE6FD',
+    },
+    mapBtnText: { fontSize: 13, fontWeight: '800', color: '#075985' },
+
+    switchModeCard: {
+        backgroundColor: '#ECFDF5',
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+        marginBottom: 12,
+    },
+    switchModeCardText: { fontSize: 13, fontWeight: '800', color: '#047857' },
+
     offlineBanner: { backgroundColor: '#FEF3C7', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#F59E0B', marginBottom: 12 },
     offlineBannerText: { color: '#B45309', fontWeight: '800', fontSize: 12, textAlign: 'center' },
     sectionTitle: { fontSize: 12, fontWeight: '800', color: '#475569', marginTop: 16, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },

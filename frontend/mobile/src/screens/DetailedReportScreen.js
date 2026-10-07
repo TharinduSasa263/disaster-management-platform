@@ -35,7 +35,13 @@ const RELIEF_NEEDS = [
     { id: 'SHELTER', label: 'Temporary Shelter' },
 ];
 
-export default function DetailedReportScreen({ userSession, onBackToAuth, onSwitchToExpress }) {
+export default function DetailedReportScreen({
+    userSession,
+    onBackToAuth,
+    onSwitchToExpress,
+    onOpenLiveMap,
+    onOpenMyReports,
+}) {
     const [step, setStep] = useState(1);
 
     // Step 1: Hazard & Location
@@ -145,9 +151,11 @@ export default function DetailedReportScreen({ userSession, onBackToAuth, onSwit
             const result = await response.json();
 
             if (response.ok || result.success) {
-                Alert.alert('Detailed Assessment Logged', 'Incident report registered with response units.', [
-                    { text: 'OK', onPress: onBackToAuth },
-                ]);
+                Alert.alert(
+                    'Report Submitted Successfully! ✅',
+                    'Your detailed hazard assessment has been submitted successfully! Check History for status updates. Thank you for reporting.',
+                    [{ text: 'OK', onPress: onOpenMyReports }]
+                );
             } else {
                 Alert.alert('Submission Error', result.message || 'Could not post detailed report.');
             }
@@ -161,18 +169,31 @@ export default function DetailedReportScreen({ userSession, onBackToAuth, onSwit
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* Top Header */}
-                <View style={styles.topBar}>
-                    <TouchableOpacity onPress={onBackToAuth} style={styles.backButton}>
-                        <Text style={styles.backButtonText}>← Exit</Text>
+                {/* Header Row 1: Title & Exit */}
+                <View style={styles.topHeaderRow}>
+                    <TouchableOpacity onPress={onBackToAuth} style={styles.exitButton}>
+                        <Text style={styles.exitButtonText}>← Exit</Text>
                     </TouchableOpacity>
-                    <View style={styles.headerTitleContainer}>
-                        <Text style={styles.headerTitle}>Detailed Hazard Assessment</Text>
-                        <TouchableOpacity onPress={onSwitchToExpress}>
-                            <Text style={styles.switchModeText}>Switch to ⚡ Express Mode</Text>
-                        </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Detailed Assessment</Text>
+                    <View style={styles.roleBadgeContainer}>
+                        <Text style={styles.roleBadgeText}>{userSession?.isGuest ? 'Guest' : 'Citizen'}</Text>
                     </View>
                 </View>
+
+                {/* Header Row 2: History & Live Map Quick Action Bar */}
+                <View style={styles.quickActionsRow}>
+                    <TouchableOpacity onPress={onOpenMyReports} style={styles.historyBtn}>
+                        <Text style={styles.historyBtnText}>📋 My Report History</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={onOpenLiveMap} style={styles.mapBtn}>
+                        <Text style={styles.mapBtnText}>🗺️ Live Hazard Map</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Header Row 3: Switch Mode Card */}
+                <TouchableOpacity onPress={onSwitchToExpress} style={styles.switchModeCard}>
+                    <Text style={styles.switchModeCardText}>⚡ Switch to Express Emergency Mode →</Text>
+                </TouchableOpacity>
 
                 {/* Progress Bar */}
                 <View style={styles.progressContainer}>
@@ -365,12 +386,70 @@ export default function DetailedReportScreen({ userSession, onBackToAuth, onSwit
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFC' },
     scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
-    topBar: { flexDirection: 'row', alignItems: 'center', marginVertical: 12 },
-    backButton: { paddingRight: 12, paddingVertical: 4 },
-    backButtonText: { color: '#0284C7', fontSize: 16, fontWeight: '700' },
-    headerTitleContainer: { flex: 1 },
+
+    topHeaderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginTop: 12,
+        marginBottom: 10,
+    },
+    exitButton: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        backgroundColor: '#F1F5F9',
+        borderRadius: 8,
+    },
+    exitButtonText: { color: '#0284C7', fontSize: 14, fontWeight: '700' },
     headerTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
-    switchModeText: { fontSize: 11, fontWeight: '700', color: '#2563EB', marginTop: 2 },
+    roleBadgeContainer: {
+        backgroundColor: '#DCFCE7',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    roleBadgeText: { fontSize: 11, fontWeight: '700', color: '#166534' },
+
+    quickActionsRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 10,
+    },
+    historyBtn: {
+        flex: 1,
+        backgroundColor: '#FEF3C7',
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#FDE68A',
+    },
+    historyBtnText: { fontSize: 13, fontWeight: '800', color: '#92400E' },
+    mapBtn: {
+        flex: 1,
+        backgroundColor: '#E0F2FE',
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#BAE6FD',
+    },
+    mapBtnText: { fontSize: 13, fontWeight: '800', color: '#075985' },
+
+    switchModeCard: {
+        backgroundColor: '#EFF6FF',
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: 10,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#BFDBFE',
+        marginBottom: 12,
+    },
+    switchModeCardText: { fontSize: 13, fontWeight: '800', color: '#1D4ED8' },
+
     progressContainer: { flexDirection: 'row', height: 6, gap: 6, marginVertical: 10 },
     progressBarSegment: { flex: 1, borderRadius: 3 },
     progressActive: { backgroundColor: '#0284C7' },

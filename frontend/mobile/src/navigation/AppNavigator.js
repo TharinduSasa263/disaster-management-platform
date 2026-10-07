@@ -55,6 +55,7 @@ export default function AppNavigator() {
                     onBackToAuth={handleLogout}
                     onSwitchToExpress={() => handleNavigate('EXPRESS_REPORT')}
                     onOpenLiveMap={() => handleNavigate('LIVE_MAP')}
+                    onOpenMyReports={() => handleNavigate('MY_REPORTS')}
                 />
             )}
 
