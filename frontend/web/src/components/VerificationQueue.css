@@ -123,11 +123,25 @@
     letter-spacing: 0.4px;
 }
 
-.badge.FLOOD       { background-color: #0284c7; }
-.badge.LANDSLIDE   { background-color: #d97706; }
-.badge.HEAVY_RAIN  { background-color: #4f46e5; }
-.badge.TSUNAMI     { background-color: #dc2626; }
-.badge.EARTHQUAKE  { background-color: #7c3aed; }
+.badge.FLOOD {
+    background-color: #0284c7;
+}
+
+.badge.LANDSLIDE {
+    background-color: #d97706;
+}
+
+.badge.HEAVY_RAIN {
+    background-color: #4f46e5;
+}
+
+.badge.TSUNAMI {
+    background-color: #dc2626;
+}
+
+.badge.EARTHQUAKE {
+    background-color: #7c3aed;
+}
 
 /* ── Confidence Score Label ── */
 .confidence-score {

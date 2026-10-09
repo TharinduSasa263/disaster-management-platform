@@ -3,6 +3,7 @@ import {
     StyleSheet,
     Text,
     View,
+    Image,
     TextInput,
     TouchableOpacity,
     ActivityIndicator,
@@ -11,8 +12,11 @@ import {
     Platform,
     ScrollView,
     SafeAreaView,
+    Dimensions,
 } from 'react-native';
 import { loginUser, registerUser } from '../services/api';
+
+const { width } = Dimensions.get('window');
 
 const SRI_LANKA_DISTRICTS = [
     'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
@@ -91,8 +95,17 @@ export default function AuthScreen({ onLoginSuccess, onContinueAsGuest }) {
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>OFFICIAL PORTAL</Text>
                         </View>
-                        <Text style={styles.brandTitle}>NDWRMS</Text>
+                        <Text style={styles.brandTitle}>RescuAlert SL</Text>
                         <Text style={styles.brandSubtitle}>Disaster Early Warning & Response</Text>
+                    </View>
+
+                    {/* Sri Lanka Map Illustration */}
+                    <View style={styles.imageWrapper}>
+                        <Image
+                            source={require('../../assets/images/signin_hero.jpg')}
+                            style={styles.signinImage}
+                            resizeMode="contain"
+                        />
                     </View>
 
                     {/* Form Card */}
@@ -221,8 +234,22 @@ export default function AuthScreen({ onLoginSuccess, onContinueAsGuest }) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFC' },
     inner: { flex: 1 },
-    scrollContent: { flexGrow: 1, justifyContent: 'center', padding: 20, paddingVertical: 30 },
-    headerContainer: { alignItems: 'center', marginBottom: 20 },
+    scrollContent: { flexGrow: 1, padding: 20, paddingTop: 10, paddingBottom: 20 },
+    headerContainer: { alignItems: 'center', marginTop: 4, marginBottom: 8 },
+    imageWrapper: {
+        width: '100%',
+        height: 130,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 10,
+        backgroundColor: '#F8FAFC',
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    signinImage: {
+        width: width - 40,
+        height: 130,
+    },
     badge: {
         backgroundColor: '#ECFDF5',
         paddingHorizontal: 10,

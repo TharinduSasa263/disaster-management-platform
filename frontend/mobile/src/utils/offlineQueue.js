@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 
+import { BASE_URL } from '../services/api';
+
 const QUEUE_KEY = '@emergency_reports_queue';
 
 /**
@@ -55,8 +57,8 @@ export const syncOfflineReports = async () => {
     for (const report of queue) {
         try {
             const endpoint = report.isDetailed
-                ? 'http://192.168.1.15:5000/api/v1/reports/submit-detailed'
-                : 'http://192.168.1.15:5000/api/v1/reports/submit';
+                ? `${BASE_URL}/reports/submit-detailed`
+                : `${BASE_URL}/reports/submit`;
 
             const headers = { 'Content-Type': 'application/json' };
             if (report.token) {

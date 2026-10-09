@@ -1,4 +1,14 @@
-export const BASE_URL = 'http://192.168.1.15:5001/api/v1';
+import Constants from 'expo-constants';
+
+const getHostIp = () => {
+    const hostUri = Constants.expoConfig?.hostUri || Constants.manifest?.debuggerHost;
+    if (hostUri) {
+        return hostUri.split(':')[0];
+    }
+    return '172.20.10.3';
+};
+
+export const BASE_URL = `http://${getHostIp()}:5001/api/v1`;
 
 export const loginUser = async (phoneNumber, password) => {
     const response = await fetch(`${BASE_URL}/auth/login`, {

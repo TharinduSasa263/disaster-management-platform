@@ -62,12 +62,19 @@ export default function DetailedReportScreen({
     const [selectedRelief, setSelectedRelief] = useState([]);
     const [submitting, setSubmitting] = useState(false);
 
+    // Default fallback location (Colombo, Sri Lanka)
+    const DEFAULT_LOCATION = { latitude: 6.914694, longitude: 79.973117 };
+
     useEffect(() => {
         (async () => {
             try {
                 let { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') {
-                    Alert.alert('Permission Denied', 'GPS access required for incident mapping.');
+                    Alert.alert(
+                        'Location Permission Denied',
+                        'GPS permission not granted. Using default location (Colombo, Sri Lanka).'
+                    );
+                    setLocation(DEFAULT_LOCATION);
                     setLoadingLocation(false);
                     return;
                 }
@@ -75,9 +82,22 @@ export default function DetailedReportScreen({
                 let currentLocation = await Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.High,
                 });
-                setLocation(currentLocation.coords);
+
+                // Check if returning iOS Simulator / Expo default mock location (San Francisco area ~37.78, -122.40)
+                const lat = currentLocation.coords.latitude;
+                const lon = currentLocation.coords.longitude;
+                if (lat > 30 && lon < -100) {
+                    console.log('Detected iOS Simulator mock location (SF). Defaulting to Colombo, Sri Lanka.');
+                    setLocation(DEFAULT_LOCATION);
+                } else {
+                    setLocation(currentLocation.coords);
+                }
             } catch (error) {
-                Alert.alert('GPS Error', 'Could not lock GPS position.');
+                Alert.alert(
+                    'GPS Error',
+                    'Could not lock GPS position. Using default location (Colombo, Sri Lanka).'
+                );
+                setLocation(DEFAULT_LOCATION);
             } finally {
                 setLoadingLocation(false);
             }

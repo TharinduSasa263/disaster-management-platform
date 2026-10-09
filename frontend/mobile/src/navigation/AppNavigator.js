@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import WelcomeScreen from '../screens/WelcomeScreen';
 import AuthScreen from '../screens/AuthScreen';
 import ExpressReportScreen from '../screens/ExpressReportScreen';
 import DetailedReportScreen from '../screens/DetailedReportScreen';
@@ -6,6 +7,7 @@ import LiveMapScreen from '../screens/LiveMapScreen';
 import MyReportsScreen from '../screens/MyReportsScreen';
 
 export default function AppNavigator() {
+    const [hasSeenWelcome, setHasSeenWelcome] = useState(false);
     // null = not logged in → shows AuthScreen
     const [userSession, setUserSession] = useState(null);
     const [currentScreen, setCurrentScreen] = useState('EXPRESS_REPORT');
@@ -26,6 +28,11 @@ export default function AppNavigator() {
     const handleNavigate = (screen) => {
         setCurrentScreen(screen);
     };
+
+    // Show WelcomeScreen first
+    if (!hasSeenWelcome) {
+        return <WelcomeScreen onContinue={() => setHasSeenWelcome(true)} />;
+    }
 
     // Show login/register screen until user authenticates or continues as guest
     if (!userSession) {

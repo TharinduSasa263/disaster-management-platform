@@ -25,58 +25,68 @@ export default function LiveMapScreen({ onBackToReport }) {
     const [incidents, setIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        (async () => {
-            try {
-                let { status } = await Location.requestForegroundPermissionsAsync();
-                if (status === 'granted') {
-                    let loc = await Location.getCurrentPositionAsync({});
+    const fetchIncidents = async () => {
+        setLoading(true);
+        try {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status === 'granted') {
+                let loc = await Location.getCurrentPositionAsync({});
+                const lat = loc.coords.latitude;
+                const lon = loc.coords.longitude;
+                // If iOS simulator mock location (SF), default to Sri Lanka
+                if (lat > 30 && lon < -100) {
+                    setUserLocation({ latitude: 6.914694, longitude: 79.973117 });
+                } else {
                     setUserLocation(loc.coords);
                 }
-
-                // Fetch live incidents from backend
-                const res = await fetch(`${BASE_URL}/reports/active`);
-
-                // Read raw text first so we can debug empty/HTML responses
-                const rawText = await res.text();
-
-                if (!res.ok) {
-                    console.error(`[LiveMap] Server error HTTP ${res.status}:`, rawText.slice(0, 200));
-                    throw new Error(`Server responded with HTTP ${res.status}`);
-                }
-
-                if (!rawText || rawText.trim() === '') {
-                    console.warn('[LiveMap] Server returned an empty body — is the backend running?');
-                    return;
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch (parseErr) {
-                    console.error('[LiveMap] Failed to parse JSON. Raw response:', rawText.slice(0, 300));
-                    throw new Error('Server returned non-JSON response. Check that the backend is running and the IP/port is correct.');
-                }
-
-                if (data.success && Array.isArray(data.data)) {
-                    setIncidents(data.data);
-                } else if (data.features && Array.isArray(data.features)) {
-                    const mapped = data.features.map((f) => ({
-                        _id: f.properties?.clusterId || Math.random().toString(),
-                        hazardType: f.properties?.hazardType || 'FLOOD',
-                        description: `${f.properties?.hazardType} in ${f.properties?.district || 'Incident Area'}`,
-                        latitude: f.geometry?.coordinates?.[1] || 0,
-                        longitude: f.geometry?.coordinates?.[0] || 0,
-                        createdAt: f.properties?.updatedAt || new Date().toISOString(),
-                    }));
-                    setIncidents(mapped);
-                }
-            } catch (err) {
-                console.error('Failed to fetch active reports:', err);
-            } finally {
-                setLoading(false);
+            } else {
+                setUserLocation({ latitude: 6.914694, longitude: 79.973117 });
             }
-        })();
+
+            // Fetch live incidents from backend
+            const res = await fetch(`${BASE_URL}/reports/active`);
+            const rawText = await res.text();
+
+            if (!res.ok) {
+                console.error(`[LiveMap] Server error HTTP ${res.status}:`, rawText.slice(0, 200));
+                throw new Error(`Server responded with HTTP ${res.status}`);
+            }
+
+            if (!rawText || rawText.trim() === '') {
+                console.warn('[LiveMap] Server returned an empty body');
+                return;
+            }
+
+            let data;
+            try {
+                data = JSON.parse(rawText);
+            } catch (parseErr) {
+                console.error('[LiveMap] Failed to parse JSON:', rawText.slice(0, 300));
+                throw new Error('Server returned non-JSON response');
+            }
+
+            if (data.success && Array.isArray(data.data)) {
+                setIncidents(data.data);
+            } else if (data.features && Array.isArray(data.features)) {
+                const mapped = data.features.map((f) => ({
+                    _id: f.properties?.clusterId || Math.random().toString(),
+                    hazardType: f.properties?.hazardType || 'FLOOD',
+                    description: `${f.properties?.hazardType} in ${f.properties?.district || 'Incident Area'}`,
+                    latitude: f.geometry?.coordinates?.[1] || 0,
+                    longitude: f.geometry?.coordinates?.[0] || 0,
+                    createdAt: f.properties?.updatedAt || new Date().toISOString(),
+                }));
+                setIncidents(mapped);
+            }
+        } catch (err) {
+            console.error('Failed to fetch active reports:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchIncidents();
     }, []);
 
     return (
@@ -87,14 +97,19 @@ export default function LiveMapScreen({ onBackToReport }) {
                     <Text style={styles.backButtonText}>← Report Hazard</Text>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Live Incident Feed</Text>
-                <TouchableOpacity
-                    onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
-                    style={styles.toggleBtn}
-                >
-                    <Text style={styles.toggleBtnText}>
-                        {viewMode === 'map' ? '📋 List' : '🗺️ Map'}
-                    </Text>
-                </TouchableOpacity>
+                <View style={styles.topActions}>
+                    <TouchableOpacity onPress={fetchIncidents} style={styles.refreshBtn}>
+                        <Text style={styles.refreshBtnText}>🔄</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
+                        style={styles.toggleBtn}
+                    >
+                        <Text style={styles.toggleBtnText}>
+                            {viewMode === 'map' ? '📋 List' : '🗺️ Map'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {loading ? (
@@ -106,10 +121,10 @@ export default function LiveMapScreen({ onBackToReport }) {
                 <MapView
                     style={styles.map}
                     initialRegion={{
-                        latitude: userLocation?.latitude || 6.9271,
-                        longitude: userLocation?.longitude || 79.8612,
-                        latitudeDelta: 0.08,
-                        longitudeDelta: 0.08,
+                        latitude: userLocation?.latitude && userLocation.latitude < 30 ? userLocation.latitude : 6.914694,
+                        longitude: userLocation?.longitude && userLocation.longitude > 0 ? userLocation.longitude : 79.973117,
+                        latitudeDelta: 0.15,
+                        longitudeDelta: 0.15,
                     }}
                     showsUserLocation
                     showsMyLocationButton
@@ -182,6 +197,9 @@ const styles = StyleSheet.create({
     backButton: { paddingVertical: 4 },
     backButtonText: { color: '#0284C7', fontWeight: '800', fontSize: 14 },
     headerTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
+    topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    refreshBtn: { backgroundColor: '#F1F5F9', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8 },
+    refreshBtnText: { fontSize: 14 },
     toggleBtn: { backgroundColor: '#E0F2FE', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
     toggleBtnText: { color: '#0284C7', fontWeight: '800', fontSize: 12 },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
