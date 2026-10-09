@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import warningCreationRoutes from './routes/warningCreationRoutes.js';
+import warningDisseminationRoutes from './routes/warningDisseminationRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -22,13 +24,16 @@ app.use(cors());
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/reports', reportRoutes);
 
+// Mount Module 2 Routes (Hazard Warning Dissemination)
+app.use('/api/warnings', warningCreationRoutes);
+app.use('/api/warnings', warningDisseminationRoutes);
+
 // Base Health-check Route
 app.get('/', (req, res) => {
   res.send('Disaster Early Warning System API is running...');
 });
 
 // Global Error Handler (must be LAST middleware)
-// Express 5 passes async errors here automatically
 app.use((err, req, res, next) => {
   console.error('❌ Unhandled Error:', err.stack || err.message);
   const statusCode = err.statusCode || err.status || 500;
@@ -37,7 +42,6 @@ app.use((err, req, res, next) => {
     message: err.message || 'Internal Server Error',
   });
 });
-
 
 const PORT = process.env.PORT || 5000;
 

@@ -2,12 +2,18 @@ import React, { useState } from 'react';
 import './App.css';
 import OfficerLogin from './components/OfficerLogin';
 import VerificationQueue from './components/VerificationQueue';
+import WarningCreationWizard from './components/WarningCreationWizard';
+import DeliveryMonitoringDashboard from './components/DeliveryMonitoringDashboard';
 
 function App() {
-    // null = not authenticated → show login screen
+    // Session state
     const [session, setSession] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [activeTab, setActiveTab] = useState('INCIDENT_VERIFICATION');
+
+    // Handover & Telemetry state
+    const [handoverData, setHandoverData] = useState(null);
+    const [activeWarningId, setActiveWarningId] = useState(null);
 
     const handleLoginSuccess = (token, user) => {
         setSession({ token, user });
@@ -15,6 +21,20 @@ function App() {
 
     const handleLogout = () => {
         setSession(null);
+    };
+
+    // Callback when a cluster is verified in Module 1 (Verification Queue)
+    const handleHandoverVerifiedCluster = (payload) => {
+        setHandoverData(payload);
+        setActiveTab('WARNING_WIZARD');
+    };
+
+    // Callback when a warning is issued in Module 2 Wizard
+    const handleDisseminatedSuccess = (warningRecord) => {
+        if (warningRecord?._id) {
+            setActiveWarningId(warningRecord._id);
+            setActiveTab('DELIVERY_MONITORING');
+        }
     };
 
     if (!session) {
@@ -46,7 +66,7 @@ function App() {
                 </div>
             </header>
 
-            {/* Layout Container: Sidebar Panel + Main Workspace */}
+            {/* Layout Container: Side Panel + Main Workspace */}
             <div className="app-layout">
                 {/* Side Navigation Panel */}
                 <aside className={`app-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
@@ -65,11 +85,20 @@ function App() {
                         </button>
 
                         <button
-                            className={`nav-item ${activeTab === 'OPERATIONS_OVERVIEW' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('OPERATIONS_OVERVIEW')}
+                            className={`nav-item ${activeTab === 'WARNING_WIZARD' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('WARNING_WIZARD')}
                         >
-                            <span className="nav-icon">📊</span>
-                            <span className="nav-text">Operations Overview</span>
+                            <span className="nav-icon">📢</span>
+                            <span className="nav-text">Early Warning Creation</span>
+                            {handoverData && <span className="nav-badge yellow">PRE-FILLED</span>}
+                        </button>
+
+                        <button
+                            className={`nav-item ${activeTab === 'DELIVERY_MONITORING' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('DELIVERY_MONITORING')}
+                        >
+                            <span className="nav-icon">📡</span>
+                            <span className="nav-text">Multi-Channel Telemetry</span>
                         </button>
 
                         <button
@@ -78,14 +107,6 @@ function App() {
                         >
                             <span className="nav-icon">⚡</span>
                             <span className="nav-text">IoT Telemetry Sensors</span>
-                        </button>
-
-                        <button
-                            className={`nav-item ${activeTab === 'DISASTER_MAP' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('DISASTER_MAP')}
-                        >
-                            <span className="nav-icon">🗺️</span>
-                            <span className="nav-text">National GIS Hazard Map</span>
                         </button>
                     </nav>
 
@@ -98,33 +119,32 @@ function App() {
                 {/* Main Content Workspace Area */}
                 <main className="app-main-content">
                     {activeTab === 'INCIDENT_VERIFICATION' && (
-                        <VerificationQueue officerToken={session.token} />
+                        <VerificationQueue
+                            officerToken={session.token}
+                            onHandoverVerifiedCluster={handleHandoverVerifiedCluster}
+                        />
                     )}
 
-                    {activeTab === 'OPERATIONS_OVERVIEW' && (
-                        <div className="tab-placeholder-card">
-                            <h2>📊 Operations Overview</h2>
-                            <p>Real-time disaster metrics and active operational response teams overview.</p>
-                            <button className="placeholder-switch-btn" onClick={() => setActiveTab('INCIDENT_VERIFICATION')}>
-                                Open Incident Verification Queue →
-                            </button>
-                        </div>
+                    {activeTab === 'WARNING_WIZARD' && (
+                        <WarningCreationWizard
+                            officerToken={session.token}
+                            prefillData={handoverData}
+                            onDisseminatedSuccess={handleDisseminatedSuccess}
+                        />
+                    )}
+
+                    {activeTab === 'DELIVERY_MONITORING' && (
+                        <DeliveryMonitoringDashboard
+                            officerToken={session.token}
+                            warningId={activeWarningId}
+                            onBackToWizard={() => setActiveTab('WARNING_WIZARD')}
+                        />
                     )}
 
                     {activeTab === 'IOT_SENSORS' && (
                         <div className="tab-placeholder-card">
                             <h2>⚡ IoT Telemetry Sensors</h2>
                             <p>Real-time telemetry stream from river water gauges, rain gauges, and soil movement sensors.</p>
-                            <button className="placeholder-switch-btn" onClick={() => setActiveTab('INCIDENT_VERIFICATION')}>
-                                Open Incident Verification Queue →
-                            </button>
-                        </div>
-                    )}
-
-                    {activeTab === 'DISASTER_MAP' && (
-                        <div className="tab-placeholder-card">
-                            <h2>🗺️ National GIS Hazard Map</h2>
-                            <p>Multi-layer spatial analysis map for emergency response units and district commanders.</p>
                             <button className="placeholder-switch-btn" onClick={() => setActiveTab('INCIDENT_VERIFICATION')}>
                                 Open Incident Verification Queue →
                             </button>
